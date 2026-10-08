@@ -1,0 +1,94 @@
+---
+title: Waveform
+description: Configuring the Waveform Pane
+sidebar:
+    order: 28
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import { Image } from "astro:assets";
+import waveform_panel from "../../../assets/waveform_panel.png";
+
+Rmpc supports music visualization via the Waveform pane.
+
+## Preview
+
+<Image src={waveform_panel} width={900} alt="Example of the Waveform pane" />
+
+## Setup
+
+To use the Waveform pane, you must have PipeWire and `pw-cat`.
+
+<Steps>
+
+1.  Create a PipeWire output in `mpd.conf` if one doesn't exist:
+
+    ```
+    audio_output {
+       type   "PipeWire"
+       name   "PipeWire"
+    }
+    ```
+
+2.  Configure the Waveform pane in `config.ron`. The `source` must match the name of the PipeWire stream to be
+    visualized. Active stream nodes can be listed using the `pw-top` command. For the example `mpd.conf` above,
+    the name would be `mpd.PipeWire`, which is reflected in the example configuration below:
+
+    ```rust
+    waveform: (
+        source: "mpd.PipeWire", // PipeWire stream target
+        sample_rate: 44100, // 44100 - 192000
+        framerate: 60, // 30 - 1024
+        duration_ms: 50, // Duration of the waveform to visualize (10 - 250)
+        output_latency_ms: 0, // Increase to match latency added by your actual audio output
+        gain: 1.0,
+        volume_compensation: true, // Keep the waveform the same size regardless of volume
+        display_mode: MonoMix, // Left, Right, MonoMix, Stereo, or StereoCentered
+        fill_wave: false, // Fill in the amplitude of the wave
+        render_silence: false, // Draw trace glyphs for silent samples
+        clear_on_pause: false, // Clear the area when paused instead of keeping the last frame
+    ),
+    ```
+
+3.  Add the Waveform pane to `config.ron` under the tabs section. Below is an example of how to add a Waveform
+    pane split alongside the queue and album art:
+
+    ```rust
+    tabs: [
+        (
+            name: "Queue",
+            pane: Split(
+                direction: Horizontal,
+                panes: [
+                    (size: "40%", pane: Pane(AlbumArt)),
+                    (size: "60%", pane: Split(
+                        direction: Vertical,
+                        panes: [
+                            (size: "50%", pane: Pane(Waveform)),
+                            (size: "50%", pane: Pane(Queue)),
+                        ],
+                    )),
+                ],
+            ),
+        ),
+    ],
+    ```
+
+    See [Panes documentation](/configuration/panes) for more information about configuring panes.
+
+</Steps>
+
+## Theming
+
+The look of the visualizer can be configured in your [theme](/configuration/theme#waveform).
+An example configuration is below:
+
+```rust
+waveform: (
+    trace_lower_symbol: '▗',
+    trace_upper_symbol: '▝',
+    trace_full_symbol: '▐',
+    trace_color: "blue",
+    background_color: None,
+),
+```
